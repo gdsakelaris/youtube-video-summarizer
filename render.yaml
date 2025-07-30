@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: youtube-summarizer
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false  # This will be set manually in Render dashboard

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>YouTube Video Summarizer</title>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='style.css') }}"
+		/>
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<h1>🎥 YouTube Video Summarizer</h1>
+				<p>
+					Enter a YouTube URL to get an AI-generated summary of the video
+					content
+				</p>
+			</header>
+
+			<div class="form-section">
+				<form id="summarizerForm">
+					<div class="input-group">
+						<label for="youtube-url">YouTube URL:</label>
+						<input
+							type="url"
+							id="youtube-url"
+							name="url"
+							placeholder="https://www.youtube.com/watch?v=VIDEO_ID"
+							required
+						/>
+					</div>
+
+					<div class="input-group">
+						<label for="summary-style">Summary Style:</label>
+						<select
+							id="summary-style"
+							name="style"
+						>
+							<option value="structured">Structured (Default)</option>
+							<option value="brief">Brief</option>
+							<option value="detailed">Detailed</option>
+						</select>
+					</div>
+
+					<button
+						type="submit"
+						id="summarize-btn"
+					>
+						<span id="btn-text">📝 Generate Summary</span>
+						<div
+							id="loading-spinner"
+							class="spinner"
+							style="display: none"
+						></div>
+					</button>
+				</form>
+			</div>
+
+			<div
+				id="result-section"
+				class="result-section"
+				style="display: none"
+			>
+				<div class="result-header">
+					<h2>📋 Video Summary</h2>
+					<div class="result-meta">
+						<span id="video-info"></span>
+						<span id="summary-info"></span>
+					</div>
+				</div>
+
+				<div class="summary-content">
+					<pre id="summary-text"></pre>
+				</div>
+
+				<div class="actions">
+					<button
+						id="copy-btn"
+						class="secondary-btn"
+					>
+						📋 Copy Summary
+					</button>
+					<button
+						id="new-summary-btn"
+						class="secondary-btn"
+					>
+						🔄 New Summary
+					</button>
+				</div>
+			</div>
+
+			<div
+				id="error-section"
+				class="error-section"
+				style="display: none"
+			>
+				<div class="error-content">
+					<h3>❌ Error</h3>
+					<p id="error-message"></p>
+					<button
+						id="retry-btn"
+						class="secondary-btn"
+					>
+						🔄 Try Again
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<footer>
+			<p>Powered by OpenAI GPT-4 and YouTube Transcript API</p>
+		</footer>
+
+		<script>
+			const form = document.getElementById("summarizerForm");
+			const submitBtn = document.getElementById("summarize-btn");
+			const btnText = document.getElementById("btn-text");
+			const loadingSpinner = document.getElementById("loading-spinner");
+			const resultSection = document.getElementById("result-section");
+			const errorSection = document.getElementById("error-section");
+			const summaryText = document.getElementById("summary-text");
+			const videoInfo = document.getElementById("video-info");
+			const summaryInfo = document.getElementById("summary-info");
+			const errorMessage = document.getElementById("error-message");
+
+			// Form submission
+			form.addEventListener("submit", async (e) => {
+				e.preventDefault();
+
+				const url = document.getElementById("youtube-url").value.trim();
+				const style = document.getElementById("summary-style").value;
+
+				if (!url) {
+					showError("Please enter a YouTube URL");
+					return;
+				}
+
+				setLoading(true);
+				hideResults();
+
+				try {
+					const response = await fetch("/summarize", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({ url, style }),
+					});
+
+					const data = await response.json();
+
+					if (data.success) {
+						showSuccess(data);
+					} else {
+						showError(data.error || "An unknown error occurred");
+					}
+				} catch (error) {
+					showError("Network error: " + error.message);
+				} finally {
+					setLoading(false);
+				}
+			});
+
+			// Copy to clipboard
+			document.getElementById("copy-btn").addEventListener("click", () => {
+				navigator.clipboard.writeText(summaryText.textContent).then(() => {
+					const btn = document.getElementById("copy-btn");
+					const originalText = btn.textContent;
+					btn.textContent = "✅ Copied!";
+					setTimeout(() => {
+						btn.textContent = originalText;
+					}, 2000);
+				});
+			});
+
+			// New summary button
+			document
+				.getElementById("new-summary-btn")
+				.addEventListener("click", () => {
+					hideResults();
+					document.getElementById("youtube-url").focus();
+				});
+
+			// Retry button
+			document.getElementById("retry-btn").addEventListener("click", () => {
+				hideResults();
+			});
+
+			function setLoading(loading) {
+				if (loading) {
+					submitBtn.disabled = true;
+					btnText.style.display = "none";
+					loadingSpinner.style.display = "inline-block";
+				} else {
+					submitBtn.disabled = false;
+					btnText.style.display = "inline";
+					loadingSpinner.style.display = "none";
+				}
+			}
+
+			function showSuccess(data) {
+				summaryText.textContent = data.summary;
+				videoInfo.textContent = `Video ID: ${data.video_id}`;
+				summaryInfo.textContent = `Style: ${
+					data.style.charAt(0).toUpperCase() + data.style.slice(1)
+				} | Transcript: ${data.transcript_length} characters`;
+
+				resultSection.style.display = "block";
+				errorSection.style.display = "none";
+			}
+
+			function showError(message) {
+				errorMessage.textContent = message;
+				errorSection.style.display = "block";
+				resultSection.style.display = "none";
+			}
+
+			function hideResults() {
+				resultSection.style.display = "none";
+				errorSection.style.display = "none";
+			}
+		</script>
+	</body>
+</html>
