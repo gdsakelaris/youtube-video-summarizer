@@ -94,7 +94,10 @@ def get_youtube_transcript(youtube_url, language_codes=['en']):
                     
                 transcript_list = transcript_data.to_raw_data()
             except Exception as e2:
-                return None, f"Error listing transcripts: {str(e2)}"
+                error_msg = str(e2)
+                if "YouTube is blocking requests" in error_msg or "IP" in error_msg:
+                    return None, "YouTube is blocking requests from this server. This is common on cloud platforms. Try a different video or run the app locally."
+                return None, f"Error listing transcripts: {error_msg}"
         
         # Convert transcript list to formatted text
         transcript_text = ""
