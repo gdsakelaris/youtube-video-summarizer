@@ -14,7 +14,10 @@ from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+# Clear any cached key first
+if 'OPENAI_API_KEY' in os.environ:
+    del os.environ['OPENAI_API_KEY']
+load_dotenv(override=True)
 
 try:
     from youtube_transcript_api import YouTubeTranscriptApi
