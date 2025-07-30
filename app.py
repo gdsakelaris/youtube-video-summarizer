@@ -12,11 +12,9 @@ import re
 from urllib.parse import urlparse, parse_qs
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-# Clear any cached key first
-if 'OPENAI_API_KEY' in os.environ:
-    del os.environ['OPENAI_API_KEY']
-load_dotenv(override=True)
+# Load environment variables from .env file (for local development)
+# In production, environment variables are set directly by the platform
+load_dotenv()  # Only loads if .env file exists, won't override production env vars
 
 try:
     from youtube_transcript_api import YouTubeTranscriptApi
